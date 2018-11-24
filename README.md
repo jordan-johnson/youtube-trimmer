@@ -1,2 +1,7 @@
 # youtube-trimmer
-Download and trim Youtube videos
+
+Download and trim Youtube videos.
+
+## Dependencies
+
+* ffmpeg
