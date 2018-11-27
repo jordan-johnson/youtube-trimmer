@@ -1,25 +1,22 @@
 using System;
 using System.Net;
 using System.IO;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Threading.Tasks;
 
 namespace YTTrimmer.Application
 {
     public class WebRequest
     {
-        private static float _progress = 0;
+        public delegate void ProgressHandler(float percentage);
+        public static event ProgressHandler OnProgressChange;
 
-        public static float GetProgress
+        public delegate void CompletionHandler();
+        public static event CompletionHandler OnCompletion;
+
+        public static async Task Download(string url, string dir, string filename)
         {
-            get
-            {
-                return _progress;
-            }
-        }
-
-        public static void Download(string url, string dir, string filename)
-        {
-            _progress = 0;
-
             string path = dir + "/" + filename;
 
             using(WebClient client = new WebClient())
@@ -28,15 +25,25 @@ namespace YTTrimmer.Application
                     Directory.CreateDirectory(dir);
 
                 client.DownloadProgressChanged += ProgressChanged;
-                client.DownloadFileAsync(new System.Uri(url), path);
+                client.DownloadFileCompleted += DownloadFinished;
+                await client.DownloadFileTaskAsync(new System.Uri(url), path);
             }
         }
 
         private static void ProgressChanged(object sender, DownloadProgressChangedEventArgs e)
         {
-            Console.Write("\rDownloading...{0}%", e.ProgressPercentage);
+            if(OnProgressChange != null)
+            {
+                OnProgressChange(e.ProgressPercentage);
+            }
+        }
 
-            _progress = e.ProgressPercentage;
+        private static void DownloadFinished(object sender, AsyncCompletedEventArgs e)
+        {
+            if(OnCompletion != null)
+            {
+                OnCompletion();
+            }
         }
     }
 }
