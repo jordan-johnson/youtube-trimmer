@@ -8,16 +8,17 @@ namespace YTTrimmer.Tests.Application
 {
     public class ConfigTest : IDisposable
     {
-        private ConfigSerialization _serializer;
+        private ConfigModel _config;
 
         public ConfigTest()
         {
-            _serializer = new ConfigSerialization();
+            _config = new ConfigSerialization().Model;
         }
 
         public void Dispose()
         {
-
+            if(File.Exists("config.json"))
+                File.Delete("config.json");
         }
 
         [Fact]
@@ -26,7 +27,9 @@ namespace YTTrimmer.Tests.Application
             bool configExists = File.Exists("config.json");
             Assert.True(configExists);
 
-            Console.WriteLine(_serializer.Model.FFMpegDirectory);
+            Assert.NotNull(_config.FFMpegDirectory);
+            Assert.NotNull(_config.DownloadDirectory);
+            Assert.NotNull(_config.OutputFileNameTemplate);
         }
     }
 }

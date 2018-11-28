@@ -9,17 +9,20 @@ namespace YTTrimmer.Application
 {
     public class Trimmer
     {
-        public static void Run(string dir, string filename, uint start, uint span)
+        private ConfigModel _config;
+
+        public Trimmer(ConfigModel config)
         {
-            DirectoryInfo dirInfo = new DirectoryInfo(Directory.GetCurrentDirectory());
-            string directoryPath = dirInfo.FullName + "/" + dir;
+            _config = config;
+        }
 
-            var input = new MediaFile {Filename = @directoryPath + filename};
-            var fileNameSplit = filename.Split(".");
-            var outputFileName = fileNameSplit[0] + "_trimmed." + fileNameSplit[1];
-            var output = new MediaFile {Filename = @directoryPath + outputFileName};
+        public void Run(string filename, double start, double span)
+        {
+            var path = FormatFilePath(filename);
+            var input = new MediaFile {Filename = path};
+            var output = GenerateOutputMediaFile(filename);
 
-            using(Engine engine = new Engine("/usr/local/bin/ffmpeg"))
+            using(Engine engine = new Engine(_config.FFMpegDirectory))
             {
                 engine.GetMetadata(input);
 
@@ -28,6 +31,20 @@ namespace YTTrimmer.Application
 
                 engine.Convert(input, output, options);
             }
+        }
+
+        private string FormatFilePath(string filename)
+        {
+            return string.Format("{0}/{1}", _config.DownloadDirectory, filename);
+        }
+
+        private MediaFile GenerateOutputMediaFile(string filename)
+        {
+            var split = filename.Split(".");
+            var outputName = string.Format(_config.OutputFileNameTemplate, split[0], split[1]);
+            var path = FormatFilePath(outputName);
+
+            return new MediaFile {Filename = path};
         }
     }
 }

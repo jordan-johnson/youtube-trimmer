@@ -12,9 +12,14 @@ namespace YTTrimmer.Application
         public ConfigSerialization()
         {
             if(File.Exists(_configFile))
+            {
                 ReadConfig();
+            }
             else
+            {
                 WriteConfig();
+                ReadConfig();
+            }
         }
 
         private void ReadConfig()
@@ -40,8 +45,15 @@ namespace YTTrimmer.Application
                 {
                     jsonwriter.Formatting = Formatting.Indented;
 
+                    ConfigModel defaultConfig = new ConfigModel
+                    {
+                        FFMpegDirectory = "/usr/local/bin/ffmpeg",
+                        DownloadDirectory = "downloads",
+                        OutputFileNameTemplate = "{0}_trimmed.{1}"
+                    };
+
                     JsonSerializer serializer = new JsonSerializer();
-                    serializer.Serialize(jsonwriter, Model);
+                    serializer.Serialize(jsonwriter, defaultConfig);
                 }
                 catch(Exception e)
                 {

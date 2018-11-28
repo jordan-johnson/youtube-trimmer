@@ -8,6 +8,9 @@ namespace YTTrimmer.Tests.Application
 {
     public class TrimmerTest : IDisposable
     {
+        private ConfigSerialization _configSerialization;
+        private Trimmer _trimmer;
+        
         private const string _url       = "https://v.redd.it/i2h1g7n9sdy11/DASH_9_6_M";
         private const string _dir       = "downloads";
         private const string _filename  = "trimtest.mp4";
@@ -16,6 +19,9 @@ namespace YTTrimmer.Tests.Application
 
         public TrimmerTest()
         {
+            _configSerialization = new ConfigSerialization();
+            _trimmer = new Trimmer(_configSerialization.Model);
+
             WebRequest.OnProgressChange += TestDownloadProgressChange;
             WebRequest.OnCompletion += TestDownloadProgressFinish;
         }
@@ -24,6 +30,12 @@ namespace YTTrimmer.Tests.Application
         {
             WebRequest.OnProgressChange -= TestDownloadProgressChange;
             WebRequest.OnCompletion -= TestDownloadProgressFinish;
+
+            if(File.Exists(_path))
+                File.Delete(_path);
+
+            if(File.Exists(_trimPath))
+                File.Delete(_trimPath);
         }
 
         [Fact]
@@ -36,7 +48,7 @@ namespace YTTrimmer.Tests.Application
                 await download;
             }
 
-            Trimmer.Run(_dir + "/", _filename, 10, 10);
+            _trimmer.Run(_filename, 10, 10);
 
             bool trimFileExists = File.Exists(_trimPath);
             Assert.True(trimFileExists);
