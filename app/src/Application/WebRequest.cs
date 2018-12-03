@@ -1,6 +1,7 @@
 using System;
 using System.Net;
 using System.IO;
+using System.Web;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading.Tasks;
@@ -9,41 +10,35 @@ namespace YTTrimmer.Application
 {
     public class WebRequest
     {
-        public delegate void ProgressHandler(float percentage);
-        public static event ProgressHandler OnProgressChange;
+        private ConfigModel _config;
 
-        public delegate void CompletionHandler();
-        public static event CompletionHandler OnCompletion;
-
-        public static async Task Download(string url, string dir, string filename)
+        public WebRequest(ConfigModel config)
         {
-            string path = dir + "/" + filename;
+            _config = config;
 
-            using(WebClient client = new WebClient())
+            /**
+             * Fixes WebException thrown "Decoded string is not a valid IDN name"
+             * when attempting to download Youtube video files. 
+             */
+            AppContext.SetSwitch("System.Net.Http.UseSocketsHttpHandler", false);
+        }
+
+        public async Task<string> Download(string url, string filename)
+        {
+            string path = _config.DownloadDirectory + filename;
+
+            using(var client = new WebClient())
             {
-                if(!Directory.Exists(dir))
-                    Directory.CreateDirectory(dir);
+                client.Encoding = System.Text.Encoding.Unicode;
 
-                client.DownloadProgressChanged += ProgressChanged;
-                client.DownloadFileCompleted += DownloadFinished;
+                if(!Directory.Exists(_config.DownloadDirectory))
+                    Directory.CreateDirectory(_config.DownloadDirectory);
+
+                //await client.DownloadFileTaskAsync(url, path);
                 await client.DownloadFileTaskAsync(new System.Uri(url), path);
             }
-        }
 
-        private static void ProgressChanged(object sender, DownloadProgressChangedEventArgs e)
-        {
-            if(OnProgressChange != null)
-            {
-                OnProgressChange(e.ProgressPercentage);
-            }
-        }
-
-        private static void DownloadFinished(object sender, AsyncCompletedEventArgs e)
-        {
-            if(OnCompletion != null)
-            {
-                OnCompletion();
-            }
+            return path;
         }
     }
 }

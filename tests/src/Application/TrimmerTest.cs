@@ -8,7 +8,8 @@ namespace YTTrimmer.Tests.Application
 {
     public class TrimmerTest : IDisposable
     {
-        private ConfigSerialization _configSerialization;
+        private ConfigModel _config;
+        private WebRequest _web;
         private Trimmer _trimmer;
         
         private const string _url       = "https://v.redd.it/i2h1g7n9sdy11/DASH_9_6_M";
@@ -19,18 +20,13 @@ namespace YTTrimmer.Tests.Application
 
         public TrimmerTest()
         {
-            _configSerialization = new ConfigSerialization();
-            _trimmer = new Trimmer(_configSerialization.Model);
-
-            WebRequest.OnProgressChange += TestDownloadProgressChange;
-            WebRequest.OnCompletion += TestDownloadProgressFinish;
+            _config = new ConfigSerialization().Model;
+            _web = new WebRequest(_config);
+            _trimmer = new Trimmer(_config);
         }
 
         public void Dispose()
         {
-            WebRequest.OnProgressChange -= TestDownloadProgressChange;
-            WebRequest.OnCompletion -= TestDownloadProgressFinish;
-
             if(File.Exists(_path))
                 File.Delete(_path);
 
@@ -58,17 +54,7 @@ namespace YTTrimmer.Tests.Application
         {
             bool isFileDownloaded = File.Exists(_path);
             if(!isFileDownloaded)
-                await WebRequest.Download(_url, _dir, _filename);
-        }
-
-        private void TestDownloadProgressChange(float percentage)
-        {
-            Console.Write("\rDownloading...{0}%", percentage);
-        }
-
-        private void TestDownloadProgressFinish()
-        {
-            Console.WriteLine("\nDownload complete.");
+                await _web.Download(_url, _filename);
         }
     }
 }
