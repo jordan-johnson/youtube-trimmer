@@ -16,9 +16,9 @@ namespace YTTrimmer.Application
             _config = config;
         }
 
-        public void Run(string filename, double start, double span)
+        public string Run(string filename, double start, double span)
         {
-            var path = FormatFilePath(filename);
+            var path = _config.DownloadDirectory + filename;
             var input = new MediaFile {Filename = path};
             var output = GenerateOutputMediaFile(filename);
 
@@ -31,18 +31,15 @@ namespace YTTrimmer.Application
 
                 engine.Convert(input, output, options);
             }
-        }
 
-        private string FormatFilePath(string filename)
-        {
-            return string.Format("{0}/{1}", _config.DownloadDirectory, filename);
+            return output.Filename;
         }
 
         private MediaFile GenerateOutputMediaFile(string filename)
         {
             var split = filename.Split(".");
             var outputName = string.Format(_config.OutputFileNameTemplate, split[0], split[1]);
-            var path = FormatFilePath(outputName);
+            var path = _config.DownloadDirectory + outputName;
 
             return new MediaFile {Filename = path};
         }

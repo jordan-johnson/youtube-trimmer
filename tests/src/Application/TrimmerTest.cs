@@ -9,52 +9,43 @@ namespace YTTrimmer.Tests.Application
     public class TrimmerTest : IDisposable
     {
         private ConfigModel _config;
-        private WebRequest _web;
+        private YoutubeHandler _ytHandler;
         private Trimmer _trimmer;
+
+        private string _originalPath;
+        private string _trimmedPath;
         
-        private const string _url       = "https://v.redd.it/i2h1g7n9sdy11/DASH_9_6_M";
-        private const string _dir       = "downloads";
-        private const string _filename  = "trimtest.mp4";
-        private const string _path      = _dir + "/" + _filename;
-        private const string _trimPath  = _dir + "/trimtest_trimmed.mp4";
+        private const string _url = "https://www.youtube.com/watch?v=C0DPdy98e4c";
 
         public TrimmerTest()
         {
             _config = new ConfigSerialization().Model;
-            _web = new WebRequest(_config);
+            _ytHandler = new YoutubeHandler(_config);
             _trimmer = new Trimmer(_config);
         }
 
         public void Dispose()
         {
-            if(File.Exists(_path))
-                File.Delete(_path);
+            if(File.Exists(_originalPath))
+                File.Delete(_originalPath);
 
-            if(File.Exists(_trimPath))
-                File.Delete(_trimPath);
+            if(File.Exists(_trimmedPath))
+                File.Delete(_trimmedPath);
         }
 
         [Fact]
-        public async void TestTrim()
+        public async Task TestDownloadAndTrim()
         {
-            bool isFileDownloaded = File.Exists(_path);
-            if(!isFileDownloaded)
-            {
-                Task download = DownloadTestFile();
-                await download;
-            }
+            var model = await _ytHandler.DownloadVideoAsync(_url);
+            var filename = String.Format("{0}.{1}", model.Id, model.Extension);
 
-            _trimmer.Run(_filename, 10, 10);
+            _originalPath = model.Path;
+            bool originalFileExists = File.Exists(_originalPath);
+            Assert.True(originalFileExists);
 
-            bool trimFileExists = File.Exists(_trimPath);
-            Assert.True(trimFileExists);
-        }
-
-        private async Task DownloadTestFile()
-        {
-            bool isFileDownloaded = File.Exists(_path);
-            if(!isFileDownloaded)
-                await _web.Download(_url, _filename);
+            _trimmedPath = _trimmer.Run(filename, 10, 10);
+            bool trimmedFileExists = File.Exists(_trimmedPath);
+            Assert.True(trimmedFileExists);
         }
     }
 }

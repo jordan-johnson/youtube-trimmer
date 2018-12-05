@@ -1,4 +1,6 @@
 using System;
+using YTTrimmer.Application;
+using YTTrimmer.MVC;
 
 namespace YTTrimmer
 {
@@ -6,7 +8,16 @@ namespace YTTrimmer
     {
         static void Main()
         {
-            Console.ReadKey();
+            var config = new ConfigSerialization().Model;
+            var youtube = new YoutubeHandler(config);
+
+            var model = new ConsoleModel();
+            model.Setup(config, youtube);
+            
+            var view = new ConsoleView();
+            var controller = new ConsoleController(model, view);
+
+            view.OnReady();
         }
     }
 }

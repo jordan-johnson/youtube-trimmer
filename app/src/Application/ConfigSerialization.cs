@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Newtonsoft.Json;
+using YTTrimmer.Exception;
 
 namespace YTTrimmer.Application
 {
@@ -55,9 +56,9 @@ namespace YTTrimmer.Application
                     JsonSerializer serializer = new JsonSerializer();
                     serializer.Serialize(jsonwriter, defaultConfig);
                 }
-                catch(Exception e)
+                catch
                 {
-                    Console.WriteLine(e.Message);
+                    throw new ConfigSerializationException(_configFile, "Serializer failed to write configuration file.");
                 }
             }
         }
