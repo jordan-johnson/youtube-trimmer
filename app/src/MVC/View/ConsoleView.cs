@@ -15,11 +15,11 @@ namespace YTTrimmer.MVC
         {
             Console.WriteLine("Please enter the URL or Id of a Youtube video:");
 
-            var input = Console.ReadLine();
+            var videoLink = Console.ReadLine();
 
-            Controller.RequestDownload(input).Wait();
+            Controller.RequestDownload(videoLink).Wait();
 
-            Console.WriteLine("okie");
+            Console.WriteLine("Download finished!");
         }
 
         public void DownloadComplete()

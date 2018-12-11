@@ -5,8 +5,10 @@ namespace YTTrimmer.Application
     {
         [JsonIgnore]
         private string _downloadDirectory;
-
+        
         public string FFMpegDirectory { get; set; }
+        public string OutputFileNameTemplate { get; set; }
+
         public string DownloadDirectory
         {
             get
@@ -19,6 +21,5 @@ namespace YTTrimmer.Application
                 _downloadDirectory = (value.EndsWith("/")) ? value : value + "/";
             }
         }
-        public string OutputFileNameTemplate { get; set; }
     }
 }

@@ -6,7 +6,7 @@ namespace YTTrimmer.Exception
 {
     public class YoutubeHandlerException : System.Exception
     {
-        public string Address { get; }
+        public string VideoId { get; }
         public Video Video { get; }
         public MediaStreamInfo StreamInfo { get; }
 
@@ -15,10 +15,10 @@ namespace YTTrimmer.Exception
         {
         }
 
-        public YoutubeHandlerException(string url, string message)
+        public YoutubeHandlerException(string videoId, string message)
             : base(message)
         {
-            Address = url;
+            VideoId = videoId;
         }
 
         public YoutubeHandlerException(Video video, MediaStreamInfo streamInfo, string message)

@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using Xunit;
 using YTTrimmer.Application;
 
@@ -10,7 +11,6 @@ namespace YTTrimmer.Tests.Application
     {
         private ConfigModel _config;
         private YoutubeHandler _ytHandler;
-        private YoutubeModel _ytModel;
 
         private const string _ytAddress = "https://www.youtube.com/watch?v=C0DPdy98e4c";
 
@@ -22,21 +22,48 @@ namespace YTTrimmer.Tests.Application
 
         public void Dispose()
         {
-            if(File.Exists(_ytModel.Path))
-                File.Delete(_ytModel.Path);
+            foreach(var model in _ytHandler.GetDownloadedFromQueue())
+            {
+                if(model.FileExists)
+                {
+                    File.Delete(model.Path);
+                }
+            }
         }
 
         [Fact]
-        public async Task TestDownload()
+        public void TestDownload()
         {
-            _ytModel = await _ytHandler.DownloadVideoAsync(_ytAddress);
+            _ytHandler.ClearQueue();
 
-            Assert.NotNull(_ytModel);
+            _ytHandler.QueueVideo(_ytAddress);
 
-            var fileExists = File.Exists(_ytModel.Path);
+            _ytHandler.DownloadQueue().Wait();
 
-            Assert.True(fileExists);
+            var downloads = _ytHandler.GetDownloadedFromQueue();
+            var videoId = _ytHandler.ParseVideoId(_ytAddress);
+            var model = _ytHandler.GetModelByVideoId(videoId);
+
+            Assert.True(model.FileExists);
         }
 
+        [Fact]
+        public void TestDownloadMultiple()
+        {
+            List<string> urls = new List<string>
+            {
+                "https://www.youtube.com/watch?v=b2jDTmGVyxs",
+                "https://www.youtube.com/watch?v=YNAiAH189n0"
+            };
+
+            _ytHandler.ClearQueue();
+            _ytHandler.QueueVideos(urls);
+            _ytHandler.DownloadQueue().Wait();
+
+            foreach(var model in _ytHandler.GetDownloadedFromQueue())
+            {
+                Assert.True(model.FileExists);
+            }
+        }
     }
 }

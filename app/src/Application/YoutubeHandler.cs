@@ -10,10 +10,11 @@ using YTTrimmer.Exception;
 
 namespace YTTrimmer.Application
 {
-    public class YoutubeHandler
+    public partial class YoutubeHandler
     {
         private ConfigModel _config;
         private YoutubeClient _client;
+        private List<YoutubeModel> _queue;
 
         public YoutubeHandler(ConfigModel config)
         {
@@ -25,95 +26,100 @@ namespace YTTrimmer.Application
             
             _config = config;
             _client = new YoutubeClient();
+            _queue = new List<YoutubeModel>();
         }
 
-        public string ParseVideoId(string url)
+        public void QueueVideo(string url)
         {
-            string videoId;
+            var videoId = ParseVideoId(url);
 
-            if(!YoutubeClient.TryParseVideoId(url, out videoId))
-                throw new YoutubeHandlerException(url, "Video Id was not found in URL.");
-            
-            return videoId;
+            _queue.Add(new YoutubeModel(videoId));
         }
 
-        public async Task<YoutubeModel> DownloadVideoAsync(string url)
+        public void QueueVideos(IEnumerable<string> urls)
         {
-            var metadata = await GetVideoMetadataAsync(url);
-            var streamInfo = await GetStreamInfoAsync(url);
-            var path = await DownloadVideoStreamAsync(url, streamInfo);
-
-            return CreateModel(metadata, streamInfo, path);
+            foreach(var url in urls)
+            {
+                QueueVideo(url);
+            }
         }
 
-        private async Task<Video> GetVideoMetadataAsync(string url)
+        public async Task DownloadQueue()
+        {
+            var tasks = new List<Task>();
+
+            foreach(var model in _queue)
+            {
+                var task = DownloadVideoAsync(model);
+
+                tasks.Add(task);
+            }
+
+            await Task.WhenAll(tasks);
+        }
+
+        public List<YoutubeModel> GetDownloadedFromQueue()
+        {
+            return _queue.FindAll(x => x.FileExists);
+        }
+
+        public void ClearQueue()
+        {
+            _queue.Clear();
+        }
+
+        private async Task DownloadVideoAsync(YoutubeModel model)
+        {
+            await GetVideoMetadataAsync(model);
+            await GetStreamInfoAsync(model);
+            await DownloadVideoStreamAsync(model);
+        }
+
+        private async Task GetVideoMetadataAsync(YoutubeModel model)
         {
             try
             {
-                string videoId = ParseVideoId(url);
+                var video = await _client.GetVideoAsync(model.Id);
 
-                return await _client.GetVideoAsync(videoId);
+                model.ApplyMetadata(video);
             }
             catch
             {
-                throw new YoutubeHandlerException(url, "Could not pull metadata.");
+                throw new YoutubeHandlerException(model.Id, "Could not pull metadata.");
             }
         }
 
-        private async Task<MediaStreamInfo> GetStreamInfoAsync(string url)
+        private async Task GetStreamInfoAsync(YoutubeModel model)
         {
             try
             {
-                var videoId = ParseVideoId(url);
-                var streamInfoSet = await _client.GetVideoMediaStreamInfosAsync(videoId);
+                var streamInfoSet = await _client.GetVideoMediaStreamInfosAsync(model.Id);
+                var muxedInfo = streamInfoSet.Muxed.WithHighestVideoQuality();
 
-                return streamInfoSet.Muxed.WithHighestVideoQuality();
+                model.ApplyMediaStreamInfo(muxedInfo);
             }
-            catch(System.Exception e)
+            catch
             {
-                throw new YoutubeHandlerException(url, "Could not get media stream info set." + e.Message);
+                throw new YoutubeHandlerException(model.Id, "Could not get media stream info set.");
             }
         }
 
-        private async Task<string> DownloadVideoStreamAsync(string url, MediaStreamInfo streamInfo)
+        private async Task DownloadVideoStreamAsync(YoutubeModel model)
         {
-            string videoId = ParseVideoId(url);
-
             try
             {
-                var extension = streamInfo.Container.GetFileExtension();
-                var filename = String.Format("{0}.{1}", videoId, extension);
-                var path = _config.DownloadDirectory + filename;
+                var path = _config.DownloadDirectory + model.FileName;
+                var progress = new Progress<double>(x => model.DownloadProgress = x);
+
+                model.ApplyPath(path);
 
                 CreateDownloadDirectoryIfNotExists();
 
-                await _client.DownloadMediaStreamAsync(streamInfo, path);
-
-                return path;
+                await _client.DownloadMediaStreamAsync(model.MediaStreamInfo, path, progress);
             }
             catch
             {
-                throw new YoutubeHandlerException(url, "Media stream could not be downloaded.");
-            }
-        }
-
-        private void CreateDownloadDirectoryIfNotExists()
-        {
-            if(!Directory.Exists(_config.DownloadDirectory))
-            {
-                Directory.CreateDirectory(_config.DownloadDirectory);
-            }
-        }
-
-        private YoutubeModel CreateModel(Video video, MediaStreamInfo info, string path)
-        {
-            try
-            {
-                return new YoutubeModel(video, info, path);
-            }
-            catch
-            {
-                throw new YoutubeHandlerException(video, info, "Model could not be instantiated.");
+                throw new YoutubeHandlerException(model.Id, "Media stream could not be downloaded.");
             }
         }
     }

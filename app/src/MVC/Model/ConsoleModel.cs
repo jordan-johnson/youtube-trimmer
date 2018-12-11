@@ -5,8 +5,6 @@ namespace YTTrimmer.MVC
 {
     public class ConsoleModel : IModel
     {
-        private YoutubeModel _lastDownload;
-
         public ConfigModel Config { get; private set; }
         public YoutubeHandler Youtube { get; private set; }
 
@@ -18,7 +16,7 @@ namespace YTTrimmer.MVC
 
         public async Task Download(string input)
         {
-            _lastDownload = await Youtube.DownloadVideoAsync(input);
+            // todo
         }
     }
 }
