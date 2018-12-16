@@ -1,22 +1,23 @@
 using System.Threading.Tasks;
 using YTTrimmer.Application;
+using YTTrimmer.Application.Models;
 
-namespace YTTrimmer.MVC
+namespace YTTrimmer.MVC.Model
 {
-    public class ConsoleModel : IModel
+    public class ConsoleModel : ModelDependencies, IModel
     {
-        public ConfigModel Config { get; private set; }
-        public YoutubeHandler Youtube { get; private set; }
-
-        public void Setup(ConfigModel config, YoutubeHandler youtube)
+        public void Download(string url)
         {
-            Config = config;
-            Youtube = youtube;
+            Youtube.ClearQueue();
+            Youtube.Queue(url);
+            Youtube.DownloadQueue().Wait();
         }
 
-        public async Task Download(string input)
+        public void Trim(string path, dynamic start, dynamic end)
         {
-            // todo
+            TrimTool.Load(Config.DownloadDirectory + path);
+            TrimTool.SetTrimSection(start, end);
+            TrimTool.Run();
         }
     }
 }

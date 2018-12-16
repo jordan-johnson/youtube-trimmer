@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Xunit;
 using YTTrimmer.Application;
+using YTTrimmer.Application.Models;
 
 namespace YTTrimmer.Tests.Application
 {
@@ -11,10 +12,10 @@ namespace YTTrimmer.Tests.Application
         private ConfigModel _config;
         private YoutubeHandler _ytHandler;
         private Trimmer _trimmer;
-        private YoutubeModel _model;
-        private string _trimmedPath;
+        private IVideoModel _model;
         
         private const string _url = "https://www.youtube.com/watch?v=C0DPdy98e4c";
+        private const string _trimmedPath = "downloads/C0DPdy98e4c_trimmed.mp4";
 
         public TrimmerTest()
         {
@@ -25,6 +26,9 @@ namespace YTTrimmer.Tests.Application
 
         public void Dispose()
         {
+            if(File.Exists("config.json"))
+                File.Delete("config.json");
+
             if(_model.FileExists)
                 File.Delete(_model.Path);
 
@@ -35,19 +39,13 @@ namespace YTTrimmer.Tests.Application
         [Fact]
         public void TestTrimVideo()
         {
-            DownloadVideoIfNotExists();
+            _model = DownloadVideoIfNotExists();
 
-            Assert.True(_model.FileExists);
-
-            _trimmer.SetInputFile(_model.FileName);
-            _trimmer.SetTimeData("00:00:10", "00:00:15");
-            _trimmedPath = _trimmer.Run();
-
-            var trimVideoExists = File.Exists(_trimmedPath);
-            Assert.True(trimVideoExists);
+            _trimmer.SetTrimSection("00:00:10", "00:00:15");
+            _trimmer.Run();
         }
 
-        private void DownloadVideoIfNotExists()
+        private IVideoModel DownloadVideoIfNotExists()
         {
             var expectedFilePath = _config.DownloadDirectory + "C0DPdy98e4c.mp4";
             var fileExists = File.Exists(expectedFilePath);
@@ -55,11 +53,11 @@ namespace YTTrimmer.Tests.Application
             if(!fileExists)
             {
                 _ytHandler.ClearQueue();
-                _ytHandler.QueueVideo(_url);
+                _ytHandler.Queue(_url);
                 _ytHandler.DownloadQueue().Wait();
-
-                _model = _ytHandler.GetModelByVideoAddress(_url);
             }
+
+            return _trimmer.Load(expectedFilePath);
         }
     }
 }

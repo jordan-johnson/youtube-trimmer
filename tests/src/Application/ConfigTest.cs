@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Xunit;
 using YTTrimmer.Application;
+using YTTrimmer.Application.Models;
 
 namespace YTTrimmer.Tests.Application
 {

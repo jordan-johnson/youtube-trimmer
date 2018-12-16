@@ -4,6 +4,7 @@ using System.Linq;
 using MediaToolkit;
 using MediaToolkit.Model;
 using MediaToolkit.Options;
+using YTTrimmer.Application.Models;
 using YTTrimmer.Exception;
 
 namespace YTTrimmer.Application
@@ -11,56 +12,47 @@ namespace YTTrimmer.Application
     public class Trimmer
     {
         private ConfigModel _config;
-        private MediaFile _inputMediaFile;
-        private MediaFile _outputMediaFile;
-        private TimeDataModel _timeData;
+        private TrimVideoModel _model;
+        private Engine _engine;
 
         public Trimmer(ConfigModel config)
         {
             _config = config;
+            _engine = new Engine(_config.FFMpegDirectory);
         }
 
-        public void SetInputFile(string filename)
+        public TrimVideoModel Load(string path)
         {
-            _inputMediaFile = new MediaFile {Filename = _config.DownloadDirectory + filename};
+            _model = new TrimVideoModel(path);
             
-            GenerateOutputFile(filename);
+            _engine.GetMetadata(_model.Input);
+
+            return _model;
         }
 
-        public void SetTimeData(string start, string end)
+        public void SetTrimSection(dynamic start, dynamic end)
         {
-            _timeData = new TimeDataModel(start, end);
+            _model.SetTrimTime(start, end);
         }
 
-        public string Run()
+        public void Run()
         {
+            if(_model == null)
+                throw new TrimmerException("Video wasn't loaded before operation.");
+
             try
             {
-                using(Engine engine = new Engine(_config.FFMpegDirectory))
-                {
-                    engine.GetMetadata(_inputMediaFile);
+                _model.CreateOutput(_config.DownloadDirectory, _config.OutputFileNameTemplate);
 
-                    ConversionOptions options = new ConversionOptions();
-                    options.CutMedia(_timeData.Start, _timeData.GetDifference);
+                ConversionOptions options = new ConversionOptions();
+                options.CutMedia(_model.TrimTime.Start, _model.TrimTime.GetDifference());
 
-                    engine.Convert(_inputMediaFile, _outputMediaFile, options);
-                }
-
-                return _outputMediaFile.Filename;
+                _engine.Convert(_model.Input, _model.Output, options);
             }
             catch
             {
-                throw new TrimmerException(_inputMediaFile, _timeData, "Could not trim video.");
+                throw new TrimmerException(_model, "Could not trim video.");
             }
-        }
-
-        private void GenerateOutputFile(string filename)
-        {
-            var split = filename.Split(".");
-            var outputName = string.Format(_config.OutputFileNameTemplate, split[0], split[1]);
-            var outputPath = _config.DownloadDirectory + outputName;
-
-            _outputMediaFile = new MediaFile {Filename = outputPath};
         }
     }
 }

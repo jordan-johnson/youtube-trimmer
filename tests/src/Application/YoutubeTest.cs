@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Xunit;
 using YTTrimmer.Application;
+using YTTrimmer.Application.Models;
 
 namespace YTTrimmer.Tests.Application
 {
@@ -22,6 +23,9 @@ namespace YTTrimmer.Tests.Application
 
         public void Dispose()
         {
+            if(File.Exists("config.json"))
+                File.Delete("config.json");
+                
             foreach(var model in _ytHandler.GetDownloadedFromQueue())
             {
                 if(model.FileExists)
@@ -35,9 +39,7 @@ namespace YTTrimmer.Tests.Application
         public void TestDownload()
         {
             _ytHandler.ClearQueue();
-
-            _ytHandler.QueueVideo(_ytAddress);
-
+            _ytHandler.Queue(_ytAddress);
             _ytHandler.DownloadQueue().Wait();
 
             var downloads = _ytHandler.GetDownloadedFromQueue();
@@ -57,7 +59,7 @@ namespace YTTrimmer.Tests.Application
             };
 
             _ytHandler.ClearQueue();
-            _ytHandler.QueueVideos(urls);
+            _ytHandler.Queue(urls);
             _ytHandler.DownloadQueue().Wait();
 
             foreach(var model in _ytHandler.GetDownloadedFromQueue())

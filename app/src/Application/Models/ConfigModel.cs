@@ -1,5 +1,5 @@
 using Newtonsoft.Json;
-namespace YTTrimmer.Application
+namespace YTTrimmer.Application.Models
 {
     public struct ConfigModel
     {

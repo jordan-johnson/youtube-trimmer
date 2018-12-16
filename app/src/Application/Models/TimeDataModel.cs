@@ -1,19 +1,11 @@
 using System;
 
-namespace YTTrimmer.Application
+namespace YTTrimmer.Application.Models
 {
     public class TimeDataModel
     {
         public TimeSpan Start { get; set; }
         public TimeSpan End { get; set; }
-        
-        public TimeSpan GetDifference
-        {
-            get
-            {
-                return End.Subtract(Start);
-            }
-        }
 
         public TimeDataModel(TimeSpan start, TimeSpan end)
         {
@@ -25,6 +17,11 @@ namespace YTTrimmer.Application
         {
             Start = TimeSpan.Parse(start);
             End = TimeSpan.Parse(end);
+        }
+
+        public TimeSpan GetDifference()
+        {
+            return End.Subtract(Start);
         }
     }
 }

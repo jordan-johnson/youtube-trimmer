@@ -3,18 +3,17 @@ using System.IO;
 using YoutubeExplode.Models;
 using YoutubeExplode.Models.MediaStreams;
 
-namespace YTTrimmer.Application
+namespace YTTrimmer.Application.Models
 {
-    public class YoutubeModel
+    public class YoutubeVideoModel : IVideoModel
     {
         public string Id { get; private set; }
         public string Title { get; private set; }
         public string Author { get; private set; }
         public TimeSpan Duration { get; private set; }
-        public DateTimeOffset UploadDate { get; private set; }
-        public string Path { get; private set; }
+        public string Path { get; set; }
         public double DownloadProgress { get; set; }
-        public MediaStreamInfo MediaStreamInfo { get; private set; }
+        public MediaStreamInfo MediaStreamInfo { get; set; }
 
         public string FileName
         {
@@ -40,7 +39,7 @@ namespace YTTrimmer.Application
             }
         }
 
-        public YoutubeModel(string id)
+        public YoutubeVideoModel(string id)
         {
             Id = id;
         }
@@ -51,17 +50,6 @@ namespace YTTrimmer.Application
             Title = metadata.Title;
             Author = metadata.Author;
             Duration = metadata.Duration;
-            UploadDate = metadata.UploadDate;
-        }
-
-        public void ApplyMediaStreamInfo(MediaStreamInfo info)
-        {
-            MediaStreamInfo = info;
-        }
-
-        public void ApplyPath(string path)
-        {
-            Path = path;
         }
     }
 }

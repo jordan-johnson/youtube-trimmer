@@ -1,9 +1,10 @@
 using System.Threading.Tasks;
 
-namespace YTTrimmer.MVC
+namespace YTTrimmer.MVC.Controller
 {
     public interface IController
     {
-        Task RequestDownload(string url);
+        void RequestDownload(string url);
+        void RequestTrim(string path, dynamic start, dynamic end);
     }
 }

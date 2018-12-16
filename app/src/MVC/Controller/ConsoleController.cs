@@ -1,6 +1,8 @@
 using System.Threading.Tasks;
+using YTTrimmer.MVC.Model;
+using YTTrimmer.MVC.View;
 
-namespace YTTrimmer.MVC
+namespace YTTrimmer.MVC.Controller
 {
     public class ConsoleController : IController
     {
@@ -15,13 +17,15 @@ namespace YTTrimmer.MVC
             _view.Controller = this;
         }
 
-        public async Task RequestDownload(string url)
+        public void RequestDownload(string url)
         {
-            if(url == "exit" || url == "quit")
-                _view.Close();
+            _model.Download(url);
+            _view.OnReady();
+        }
 
-            await _model.Download(url);
-            _view.DownloadComplete();
+        public void RequestTrim(string path, dynamic start, dynamic end)
+        {
+            _model.Trim(path, start, end);
             _view.OnReady();
         }
     }

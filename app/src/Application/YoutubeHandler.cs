@@ -6,6 +6,7 @@ using System.IO;
 using YoutubeExplode;
 using YoutubeExplode.Models;
 using YoutubeExplode.Models.MediaStreams;
+using YTTrimmer.Application.Models;
 using YTTrimmer.Exception;
 
 namespace YTTrimmer.Application
@@ -14,7 +15,7 @@ namespace YTTrimmer.Application
     {
         private ConfigModel _config;
         private YoutubeClient _client;
-        private List<YoutubeModel> _queue;
+        private List<YoutubeVideoModel> _queue;
 
         public YoutubeHandler(ConfigModel config)
         {
@@ -26,21 +27,21 @@ namespace YTTrimmer.Application
             
             _config = config;
             _client = new YoutubeClient();
-            _queue = new List<YoutubeModel>();
+            _queue = new List<YoutubeVideoModel>();
         }
 
-        public void QueueVideo(string url)
+        public void Queue(string url)
         {
             var videoId = ParseVideoId(url);
 
-            _queue.Add(new YoutubeModel(videoId));
+            _queue.Add(new YoutubeVideoModel(videoId));
         }
 
-        public void QueueVideos(IEnumerable<string> urls)
+        public void Queue(IEnumerable<string> urls)
         {
             foreach(var url in urls)
             {
-                QueueVideo(url);
+                Queue(url);
             }
         }
 
@@ -58,7 +59,7 @@ namespace YTTrimmer.Application
             await Task.WhenAll(tasks);
         }
 
-        public List<YoutubeModel> GetDownloadedFromQueue()
+        public List<YoutubeVideoModel> GetDownloadedFromQueue()
         {
             return _queue.FindAll(x => x.FileExists);
         }
@@ -68,14 +69,14 @@ namespace YTTrimmer.Application
             _queue.Clear();
         }
 
-        private async Task DownloadVideoAsync(YoutubeModel model)
+        private async Task DownloadVideoAsync(YoutubeVideoModel model)
         {
             await GetVideoMetadataAsync(model);
             await GetStreamInfoAsync(model);
             await DownloadVideoStreamAsync(model);
         }
 
-        private async Task GetVideoMetadataAsync(YoutubeModel model)
+        private async Task GetVideoMetadataAsync(YoutubeVideoModel model)
         {
             try
             {
@@ -89,14 +90,14 @@ namespace YTTrimmer.Application
             }
         }
 
-        private async Task GetStreamInfoAsync(YoutubeModel model)
+        private async Task GetStreamInfoAsync(YoutubeVideoModel model)
         {
             try
             {
                 var streamInfoSet = await _client.GetVideoMediaStreamInfosAsync(model.Id);
                 var muxedInfo = streamInfoSet.Muxed.WithHighestVideoQuality();
 
-                model.ApplyMediaStreamInfo(muxedInfo);
+                model.MediaStreamInfo = muxedInfo;
             }
             catch
             {
@@ -104,18 +105,15 @@ namespace YTTrimmer.Application
             }
         }
 
-        private async Task DownloadVideoStreamAsync(YoutubeModel model)
+        private async Task DownloadVideoStreamAsync(YoutubeVideoModel model)
         {
             try
             {
-                var path = _config.DownloadDirectory + model.FileName;
                 var progress = new Progress<double>(x => model.DownloadProgress = x);
 
-                model.ApplyPath(path);
+                model.Path = _config.DownloadDirectory + model.FileName;
 
-                CreateDownloadDirectoryIfNotExists();
-
-                await _client.DownloadMediaStreamAsync(model.MediaStreamInfo, path, progress);
+                await _client.DownloadMediaStreamAsync(model.MediaStreamInfo, model.Path, progress);
             }
             catch
             {

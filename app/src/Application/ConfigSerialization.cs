@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Newtonsoft.Json;
+using YTTrimmer.Application.Models;
 using YTTrimmer.Exception;
 
 namespace YTTrimmer.Application
@@ -21,11 +22,13 @@ namespace YTTrimmer.Application
                 WriteConfig();
                 ReadConfig();
             }
+
+            CreateDownloadDirectoryIfNotExists();
         }
 
         private void ReadConfig()
         {
-            if(File.Exists(_configFile))
+            try
             {
                 using (StreamReader streamReader = File.OpenText(_configFile))
                 {
@@ -34,19 +37,23 @@ namespace YTTrimmer.Application
                     Model = (ConfigModel)serializer.Deserialize(streamReader, typeof(ConfigModel));
                 }
             }
+            catch
+            {
+                throw new ConfigSerializationException(_configFile, "Could not read configuration file.");
+            }
         }
 
         private void WriteConfig()
         {
-            using (FileStream filestream = File.Open(_configFile, FileMode.OpenOrCreate))
-            using (StreamWriter streamwriter = new StreamWriter(filestream))
-            using (JsonTextWriter jsonwriter = new JsonTextWriter(streamwriter))
+            try
             {
-                try
+                using (FileStream filestream = File.Open(_configFile, FileMode.OpenOrCreate))
+                using (StreamWriter streamwriter = new StreamWriter(filestream))
+                using (JsonTextWriter jsonwriter = new JsonTextWriter(streamwriter))
                 {
                     jsonwriter.Formatting = Formatting.Indented;
 
-                    ConfigModel defaultConfig = new ConfigModel
+                    var defaultConfig = new ConfigModel
                     {
                         FFMpegDirectory = "/usr/local/bin/ffmpeg",
                         DownloadDirectory = "downloads",
@@ -56,10 +63,18 @@ namespace YTTrimmer.Application
                     JsonSerializer serializer = new JsonSerializer();
                     serializer.Serialize(jsonwriter, defaultConfig);
                 }
-                catch
-                {
-                    throw new ConfigSerializationException(_configFile, "Serializer failed to write configuration file.");
-                }
+            }
+            catch
+            {
+                throw new ConfigSerializationException(_configFile, "Serializer failed to write configuration file.");
+            }
+        }
+
+        private void CreateDownloadDirectoryIfNotExists()
+        {
+            if(!Directory.Exists(Model.DownloadDirectory))
+            {
+                Directory.CreateDirectory(Model.DownloadDirectory);
             }
         }
     }

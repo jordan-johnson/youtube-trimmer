@@ -3,6 +3,7 @@ using System.IO;
 using YoutubeExplode;
 using YoutubeExplode.Models;
 using YoutubeExplode.Models.MediaStreams;
+using YTTrimmer.Application.Models;
 using YTTrimmer.Exception;
 
 namespace YTTrimmer.Application
@@ -19,7 +20,7 @@ namespace YTTrimmer.Application
             return videoId;
         }
 
-        public YoutubeModel GetModelByVideoId(string videoId)
+        public YoutubeVideoModel GetModelByVideoId(string videoId)
         {
             try
             {
@@ -31,19 +32,11 @@ namespace YTTrimmer.Application
             }
         }
 
-        public YoutubeModel GetModelByVideoAddress(string url)
+        public YoutubeVideoModel GetModelByVideoAddress(string url)
         {
             var videoId = ParseVideoId(url);
 
             return GetModelByVideoId(videoId);
-        }
-
-        private void CreateDownloadDirectoryIfNotExists()
-        {
-            if(!Directory.Exists(_config.DownloadDirectory))
-            {
-                Directory.CreateDirectory(_config.DownloadDirectory);
-            }
         }
     }
 }
