@@ -15,11 +15,6 @@ namespace YTTrimmer.MVC.View
 
         public IController Controller { get;set; }
 
-        public void Close()
-        {
-            Environment.Exit(0);
-        }
-
         public void OnReady()
         {
             var action = ChooseAction();
